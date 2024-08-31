@@ -4,8 +4,9 @@ const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 
 module.exports.index = async (req, res) => {
+    let search  = req.query.data;
     const allListings = await Listing.find({});
-    res.render("listings/index.ejs", {allListings});
+    res.render("listings/index.ejs", {allListings, search});
 };
 
 module.exports.renderNewForm = (req, res) => {
@@ -22,7 +23,12 @@ module.exports.showListing = async (req, res) => {
         req.flash("error", "Listing you requested does not exist!!!");
         res.redirect("/listings");
     }
-    console.log(listing);
+    let response = await geocodingClient.forwardGeocode({
+        query: listing.location,
+        limit: 1
+      })
+      .send();
+      listing.geometry = response.body.features[0].geometry;
     res.render("listings/show.ejs", {listing});
 };
 
@@ -81,4 +87,4 @@ module.exports.destroyListing = async (req, res) => {
     console.log(deletedListing);
     req.flash("success", "Listing Deleted!!!");
     res.redirect("/listings");
-}; 
+};
